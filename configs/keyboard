@@ -3,8 +3,8 @@
 # Consult the keyboard(5) manual page.
 
 XKBMODEL="pc105"
-XKBLAYOUT="gb"
+XKBLAYOUT="br"
 XKBVARIANT=""
-XKBOPTIONS=""
+XKBOPTIONS="lv3:ralt_switch,terminate:ctrl_alt_bksp"
 
 BACKSPACE="guess"
