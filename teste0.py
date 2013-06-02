@@ -19,6 +19,7 @@ except:
 # assegurar que a função cleanup será chamada na saída do script
 atexit.register(GPIO.cleanup)
 
+# usar numeração física do conector (pino 1 == 3v3)
 GPIO.setmode(GPIO.BOARD)
 
 def ver(argv):

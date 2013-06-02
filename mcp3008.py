@@ -1,45 +1,50 @@
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
 import time
 import os
+import atexit
 import RPi.GPIO as GPIO
 
 GPIO.setmode(GPIO.BCM)
+
+# assegurar que a função cleanup será chamada na saída do script
+atexit.register(GPIO.cleanup)
+
 DEBUG = 1
 
-# read SPI data from MCP3008 chip, 8 possible adc's (0 thru 7)
-def readadc(adcnum, clockpin, mosipin, misopin, cspin):
-        if ((adcnum > 7) or (adcnum < 0)):
-                return -1
+# ler dados do MCP3008 usando protocolo SPI
+def ler_canal(canal, clockpin, mosipin, misopin, cspin):
+        assert 0 <= canal <= 7, 'canal deve ser de 0 a 7'
         GPIO.output(cspin, True)
-
         GPIO.output(clockpin, False)  # start clock low
         GPIO.output(cspin, False)     # bring CS low
-
-        commandout = adcnum
-        commandout |= 0x18  # start bit + single-ended bit
-        commandout <<= 3    # we only need to send 5 bits here
+        print canal
+        cmd = canal
+        print '{0:08b}'.format(cmd)
+        cmd |= 0x18  # start bit + single-ended bit
+        print '{0:08b}'.format(cmd)
+        cmd <<= 3    # we only need to send 5 bits here
+        print '{0:08b}'.format(cmd)
         for i in range(5):
-                if (commandout & 0x80):
-                        GPIO.output(mosipin, True)
-                else:
-                        GPIO.output(mosipin, False)
-                commandout <<= 1
+                GPIO.output(mosipin, cmd & 0x80)
+                cmd <<= 1
                 GPIO.output(clockpin, True)
                 GPIO.output(clockpin, False)
 
-        adcout = 0
+        res = 0
         # read in one empty bit, one null bit and 10 ADC bits
         for i in range(12):
                 GPIO.output(clockpin, True)
                 GPIO.output(clockpin, False)
-                adcout <<= 1
+                res <<= 1
                 if (GPIO.input(misopin)):
-                        adcout |= 0x1
+                        res |= 0x1
 
         GPIO.output(cspin, True)
-        
-        adcout >>= 1       # first bit is 'null' so drop it
-        return adcout
+        print '{0:012b}'.format(res)
+        res >>= 1       # first bit is 'null' so drop it
+        return res
 
 # change these as desired - they're the pins connected from the
 # SPI port on the ADC to the Cobbler
@@ -54,6 +59,8 @@ GPIO.setup(SPIMISO, GPIO.IN)
 GPIO.setup(SPICLK, GPIO.OUT)
 GPIO.setup(SPICS, GPIO.OUT)
 
+ler_canal(3, SPICLK, SPIMOSI, SPIMISO, SPICS)
+
 # 10k trim pot connected to adc #0
 potentiometer_adc = 0;
 
@@ -61,7 +68,8 @@ last_read = 0       # this keeps track of the last potentiometer value
 tolerance = 5       # to keep from being jittery we'll only change
                     # volume when the pot has moved more than 5 'counts'
 
-while True:
+def main():
+    while True:
 
         # read the analog pin
         trim_pot = readadc(potentiometer_adc, SPICLK, SPIMOSI, SPIMISO, SPICS)
@@ -77,3 +85,4 @@ while True:
         last_read = trim_pot
         # hang out and do nothing for a half second
         time.sleep(0.2)
+
