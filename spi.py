@@ -55,7 +55,7 @@ def ler_canal(canal):
 contador = 0
 display = '{0:6d}  {1:010b}  {1:4}  {2:3.2f} V {3}'
 while True:
-    res = ler_canal(3)
+    res = ler_canal(1)
     volts = float(res)/1023 * 3.3
     marcas = int(round(float(res)/1023*40))*'='
     print display.format(contador, res, volts, marcas)
